@@ -121,10 +121,16 @@ std::tuple<int, std::string> ExecuteProcessAndCaptureOutput(std::string command,
 			bSuccess = ReadFile(g_hChildStd_OUT_Rd, buffer.data(), std::min(BUFFER_SIZE, dwTotalBytesAvailable), &dwRead, NULL);
 			if (!bSuccess || dwRead == 0) break;
 #else
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(500ms);
+			PrintTimeLocked("Now in front of ReadFile", myThreadId, 0);
+			std::this_thread::sleep_for(100ms);
+
 			bSuccess = ReadFile(g_hChildStd_OUT_Rd, buffer.data(), BUFFER_SIZE, &dwRead, NULL);
 			if (!bSuccess || dwRead == 0) break;
+			PrintTimeLocked("ReadFile returned", myThreadId, dwRead);
 #endif
-			resultString += buffer.data();
+			resultString.append(buffer.data(), dwRead);
 		} while (true);
 	}
 	catch (...) {
