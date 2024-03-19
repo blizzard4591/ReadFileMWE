@@ -108,15 +108,22 @@ std::tuple<int, std::string> ExecuteProcessAndCaptureOutput(std::string command,
 	std::array<char, BUFFER_SIZE> buffer;
 	std::string resultString;
 	DWORD dwRead = 0;
+#ifdef PEEK_FIRST
 	DWORD dwTotalBytesAvailable = 0;
+#endif
 	try {
 		do {
+#ifdef PEEK_FIRST
 			// ReadFile can block the entire process instead of just this thread, so we need to peek first to make sure we only read what is there
 			bSuccess = PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &dwTotalBytesAvailable, NULL);
 			if (!bSuccess || dwTotalBytesAvailable == 0) break;
 
 			bSuccess = ReadFile(g_hChildStd_OUT_Rd, buffer.data(), std::min(BUFFER_SIZE, dwTotalBytesAvailable), &dwRead, NULL);
 			if (!bSuccess || dwRead == 0) break;
+#else
+			bSuccess = ReadFile(g_hChildStd_OUT_Rd, buffer.data(), BUFFER_SIZE, &dwRead, NULL);
+			if (!bSuccess || dwRead == 0) break;
+#endif
 			resultString += buffer.data();
 		} while (true);
 	}
